@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -28,6 +29,7 @@ export default function TripsPage() {
   const [vehicleId, setVehicleId] = useState("");
   const [driverId, setDriverId] = useState("");
   const { toast } = useToast();
+  const router = useRouter();
 
   const { data, isLoading } = useTrips({
     from_date: fromDate || undefined,
@@ -85,7 +87,7 @@ export default function TripsPage() {
                 {trips.length === 0 ? (
                   <Tr><Td colSpan={8} className="text-center py-8 text-gray-500">No trips found</Td></Tr>
                 ) : trips.map((t) => (
-                  <Tr key={t.id}>
+                  <Tr key={t.id} onClick={() => router.push(`/trips/${t.id}`)}>
                     <Td className="font-medium">{t.route?.name || "—"}</Td>
                     <Td>{formatDate(t.departure_date)}</Td>
                     <Td>{formatTime(t.departure_time)}</Td>
