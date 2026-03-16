@@ -12,10 +12,12 @@ import { Table, Thead, Tbody, Th, Tr, Td } from "@/components/ui/Table";
 import TerminalForm from "@/components/forms/TerminalForm";
 import { useTerminals, useCreateTerminal, useUpdateTerminal } from "@/hooks/queries/useTerminals";
 import { useToast } from "@/components/ui/Toast";
+import { useRouter } from "next/navigation";
 import { Plus, Search, Pencil } from "lucide-react";
 import type { Terminal } from "@/types";
 
 export default function TerminalsPage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
@@ -57,7 +59,7 @@ export default function TerminalsPage() {
                 {terminals.length === 0 ? (
                   <Tr><Td colSpan={7} className="text-center py-8 text-gray-500">No terminals found</Td></Tr>
                 ) : terminals.map((t) => (
-                  <Tr key={t.id}>
+                  <Tr key={t.id} className="cursor-pointer hover:bg-gray-50" onClick={() => router.push(`/terminals/${t.id}`)}>
                     <Td className="font-medium text-gray-900">{t.name}</Td>
                     <Td><span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{t.code}</span></Td>
                     <Td>{t.city}</Td>

@@ -13,10 +13,12 @@ import Input from "@/components/ui/Input";
 import { useSchedules, useCreateSchedule, useGenerateTrips } from "@/hooks/queries/useSchedules";
 import { useToast } from "@/components/ui/Toast";
 import { formatCurrency, formatTime } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 import { Plus, Zap } from "lucide-react";
 import type { Schedule } from "@/types";
 
 export default function SchedulesPage() {
+  const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
   const [generating, setGenerating] = useState<Schedule | null>(null);
   const [genFrom, setGenFrom] = useState("");
@@ -57,7 +59,7 @@ export default function SchedulesPage() {
               {(!schedules || schedules.length === 0) ? (
                 <Tr><Td colSpan={7} className="text-center py-8 text-gray-500">No schedules</Td></Tr>
               ) : schedules.map((s) => (
-                <Tr key={s.id}>
+                <Tr key={s.id} className="cursor-pointer hover:bg-gray-50" onClick={() => router.push(`/schedules/${s.id}`)}>
                   <Td className="font-medium">{s.route?.name || s.route_id.slice(0, 8)}</Td>
                   <Td>{s.vehicle_type?.name || "—"}</Td>
                   <Td>{formatTime(s.departure_time)}</Td>
