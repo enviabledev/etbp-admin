@@ -284,7 +284,7 @@ export default function DriverDetailPage() {
                 <span className="text-sm text-gray-500">Rating</span>
                 <span className="flex items-center gap-1 text-sm font-medium">
                   <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
-                  {driver.rating_avg.toFixed(1)}
+                  {(driver.rating_avg ?? 0).toFixed(1)}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -450,7 +450,7 @@ export default function DriverDetailPage() {
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Star className="h-8 w-8 text-amber-500 fill-amber-500" />
                 <span className="text-4xl font-bold text-gray-900">
-                  {driver.rating_avg.toFixed(1)}
+                  {(driver.rating_avg ?? 0).toFixed(1)}
                 </span>
               </div>
               <p className="text-sm text-gray-500">Average Rating</p>

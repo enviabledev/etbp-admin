@@ -151,7 +151,7 @@ export default function AdminUserDetailPage() {
       />
       <Header
         title={fullName}
-        subtitle={user.role.replace(/_/g, " ")}
+        subtitle={(user.role || "").replace(/_/g, " ")}
         actions={
           <Button variant="ghost" onClick={() => router.push("/admin-users")}>
             <ArrowLeft className="h-4 w-4 mr-2" /> Back
@@ -217,7 +217,7 @@ export default function AdminUserDetailPage() {
                     </div>
                     <div>
                       <p className="font-semibold text-gray-900">{fullName}</p>
-                      <p className="text-sm text-gray-500 capitalize">{user.role.replace(/_/g, " ")}</p>
+                      <p className="text-sm text-gray-500 capitalize">{(user.role || "").replace(/_/g, " ")}</p>
                     </div>
                   </div>
                   <div className="space-y-2 pt-2">
