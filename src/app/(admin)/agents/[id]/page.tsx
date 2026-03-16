@@ -47,7 +47,19 @@ export default function AgentDetailPage() {
     queryKey: ["admin-agent-detail", id],
     queryFn: async () => {
       const { data } = await api.get(`/api/admin/agents/${id}`);
-      return data;
+      // Backend returns { user, stats, recent_bookings }
+      const u = data.user || data;
+      return {
+        ...u,
+        total_bookings: data.stats?.total_bookings ?? 0,
+        total_revenue: data.stats?.total_revenue ?? 0,
+        bookings_this_month: data.stats?.bookings_this_month ?? 0,
+        recent_bookings: (data.recent_bookings || []).map((b: Record<string, unknown>) => ({
+          ...b,
+          id: b.id || b.reference,
+          total_amount: b.amount ?? b.total_amount ?? 0,
+        })),
+      };
     },
     enabled: !!id,
   });

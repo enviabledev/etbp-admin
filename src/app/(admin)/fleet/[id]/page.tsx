@@ -100,7 +100,18 @@ export default function VehicleDetailPage() {
     queryFn: async () => {
       try {
         const { data } = await api.get(`/api/admin/vehicles/${id}/detail`);
-        return data;
+        // Backend returns { vehicle, documents, maintenance, trip_history, notes }
+        const v = data.vehicle || data;
+        return {
+          ...v,
+          insurance_expiry: data.documents?.insurance?.expiry ?? v.insurance_expiry ?? null,
+          registration_expiry: data.documents?.registration?.expiry ?? v.registration_expiry ?? null,
+          inspection_expiry: data.documents?.inspection?.expiry ?? v.inspection_expiry ?? null,
+          last_service_date: data.maintenance?.last_service_date ?? v.last_service_date ?? null,
+          next_service_due: data.maintenance?.next_service_due ?? v.next_service_due ?? null,
+          notes: data.notes ?? v.notes ?? null,
+          trip_history: data.trip_history || [],
+        };
       } catch {
         const { data } = await api.get(`/api/admin/vehicles/${id}`);
         return data;

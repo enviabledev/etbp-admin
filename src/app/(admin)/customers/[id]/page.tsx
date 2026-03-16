@@ -54,7 +54,20 @@ export default function CustomerDetailPage() {
     queryKey: ["admin-customer-detail", id],
     queryFn: async () => {
       const { data } = await api.get(`/api/admin/users/customers/${id}`);
-      return data;
+      // Backend returns { user, stats, recent_bookings, wallet_balance }
+      const u = data.user || data;
+      return {
+        ...u,
+        total_bookings: data.stats?.total_bookings ?? 0,
+        total_spent: data.stats?.total_spent ?? 0,
+        favourite_route: data.stats?.favourite_route ?? null,
+        wallet_balance: data.wallet_balance ?? 0,
+        recent_bookings: (data.recent_bookings || []).map((b: Record<string, unknown>) => ({
+          ...b,
+          id: b.id || b.reference,
+          total_amount: b.amount ?? b.total_amount ?? 0,
+        })),
+      };
     },
     enabled: !!id,
   });

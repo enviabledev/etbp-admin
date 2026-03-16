@@ -54,7 +54,12 @@ export default function AdminUserDetailPage() {
     queryKey: ["admin-user-detail", id],
     queryFn: async () => {
       const { data } = await api.get(`/api/admin/users/admins/${id}`);
-      return data;
+      // Backend returns { user, recent_audit_logs }
+      const u = data.user || data;
+      return {
+        ...u,
+        audit_log: data.recent_audit_logs || [],
+      };
     },
     enabled: !!id,
   });

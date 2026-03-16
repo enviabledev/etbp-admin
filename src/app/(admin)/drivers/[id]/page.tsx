@@ -81,7 +81,21 @@ export default function DriverDetailPage() {
     queryKey: ["admin-driver-detail", id],
     queryFn: async () => {
       const { data } = await api.get(`/api/admin/drivers/${id}/detail`);
-      return data;
+      // Backend returns { driver, compliance, trip_history, performance }
+      // Flatten into the shape the page expects
+      const d = data.driver || data;
+      const user = d.user || {};
+      return {
+        ...d,
+        first_name: user.first_name || d.first_name || "",
+        last_name: user.last_name || d.last_name || "",
+        email: user.email || d.email || "",
+        phone: user.phone || d.phone || "",
+        is_active: user.is_active ?? d.is_active ?? true,
+        rating_avg: data.performance?.rating_avg ?? d.rating_avg ?? 0,
+        total_trips: data.performance?.total_trips ?? d.total_trips ?? 0,
+        trip_history: data.trip_history || [],
+      };
     },
     enabled: !!id,
   });
