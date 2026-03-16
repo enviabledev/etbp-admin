@@ -61,7 +61,7 @@ export function useVehicleType(id: string) {
     queryKey: ["admin-vehicle-type", id],
     queryFn: async () => {
       const { data } = await api.get(`/api/admin/vehicles/types/${id}`);
-      return data;
+      return data.vehicle_type ?? data;
     },
     enabled: !!id,
   });

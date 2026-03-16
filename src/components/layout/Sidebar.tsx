@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Route, MapPin, Calendar, Bus, Truck, Users,
   Ticket, Tag, BarChart3, ChevronLeft, ChevronRight, LogOut, UserCircle,
-  Settings, Menu, X, Shield, Car, UserCheck,
+  Settings, Menu, X, Shield, UserCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { useLogout, useUser } from "@/hooks/useAuth";
@@ -34,7 +34,6 @@ const navSections: NavSection[] = [
     roles: ["fleet_manager", "admin", "super_admin"],
     items: [
       { href: "/fleet", label: "Vehicles", icon: Truck },
-      { href: "/fleet/types", label: "Vehicle Types", icon: Car },
       { href: "/drivers", label: "Drivers", icon: UserCircle },
     ],
   },
