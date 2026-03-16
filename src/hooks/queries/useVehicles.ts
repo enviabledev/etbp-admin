@@ -45,6 +45,42 @@ export function useUpdateVehicle() {
   });
 }
 
+export function useVehicle(id: string) {
+  return useQuery<Vehicle>({
+    queryKey: ["admin-vehicle", id],
+    queryFn: async () => {
+      const { data } = await api.get(`/api/admin/vehicles/${id}`);
+      return data;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useVehicleType(id: string) {
+  return useQuery<VehicleType>({
+    queryKey: ["admin-vehicle-type", id],
+    queryFn: async () => {
+      const { data } = await api.get(`/api/admin/vehicles/types/${id}`);
+      return data;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useUpdateVehicleType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...payload }: Record<string, unknown> & { id: string }) => {
+      const { data } = await api.put(`/api/admin/vehicles/types/${id}`, payload);
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-vehicle-types"] });
+      qc.invalidateQueries({ queryKey: ["admin-vehicle-type"] });
+    },
+  });
+}
+
 export function useCreateVehicleType() {
   const qc = useQueryClient();
   return useMutation({
