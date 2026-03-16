@@ -1,6 +1,7 @@
 import { format, parseISO, formatDistanceToNow } from "date-fns";
 
-export function formatCurrency(amount: number, currency = "NGN"): string {
+export function formatCurrency(amount: number | null | undefined, currency = "NGN"): string {
+  if (amount == null) return "—";
   return new Intl.NumberFormat("en-NG", {
     style: "currency",
     currency,
@@ -9,16 +10,21 @@ export function formatCurrency(amount: number, currency = "NGN"): string {
   }).format(amount);
 }
 
-export function formatDate(dateStr: string): string {
+export function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
   return format(parseISO(dateStr), "dd MMM yyyy");
 }
 
-export function formatDateTime(dateStr: string): string {
+export function formatDateTime(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
   return format(parseISO(dateStr), "dd MMM yyyy, HH:mm");
 }
 
-export function formatTime(timeStr: string): string {
-  // Handle "HH:mm:ss" or "HH:mm" format
+export function formatTime(timeStr: string | null | undefined): string {
+  if (!timeStr) return "—";
+  if (timeStr.includes("T")) {
+    return format(parseISO(timeStr), "HH:mm");
+  }
   const parts = timeStr.split(":");
   const h = parseInt(parts[0]);
   const m = parts[1];
@@ -27,7 +33,8 @@ export function formatTime(timeStr: string): string {
   return `${h12}:${m} ${ampm}`;
 }
 
-export function timeAgo(dateStr: string): string {
+export function timeAgo(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
   return formatDistanceToNow(parseISO(dateStr), { addSuffix: true });
 }
 
