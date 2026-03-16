@@ -196,7 +196,11 @@ export default function VehicleTypeDetailPage() {
     };
 
     updateMutation.mutate(payload as Record<string, unknown> & { id: string }, {
-      onSuccess: () => toast("success", "Vehicle type updated successfully"),
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["admin-vehicle-type", id] });
+        qc.invalidateQueries({ queryKey: ["admin-vehicle-types"] });
+        toast("success", "Vehicle type updated successfully");
+      },
       onError: (err: ApiError) =>
         toast("error", err?.response?.data?.detail || "Failed to update vehicle type"),
     });
@@ -241,6 +245,7 @@ export default function VehicleTypeDetailPage() {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Executive Bus"
                   />
+                  <div>
                   <Input
                     label="Seat Capacity"
                     type="number"
@@ -248,6 +253,8 @@ export default function VehicleTypeDetailPage() {
                     onChange={(e) => setSeatCapacity(e.target.value)}
                     placeholder="32"
                   />
+                  <p className="text-xs text-gray-400 mt-1">Changing capacity will regenerate the seat layout</p>
+                  </div>
                 </div>
                 <Input
                   label="Description"
