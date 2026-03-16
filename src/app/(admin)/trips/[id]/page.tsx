@@ -78,7 +78,7 @@ export default function TripDetailPage() {
       });
     }
   }
-  passengers.sort((a, b) => a.seat.localeCompare(b.seat));
+  passengers.sort((a, b) => (parseInt(a.seat) || 0) - (parseInt(b.seat) || 0));
 
   return (
     <>
