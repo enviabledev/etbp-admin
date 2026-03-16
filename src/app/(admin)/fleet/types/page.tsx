@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -14,6 +15,7 @@ import { Plus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export default function VehicleTypesPage() {
+  const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
   const [capacity, setCapacity] = useState("");
@@ -48,7 +50,7 @@ export default function VehicleTypesPage() {
               {(!types || types.length === 0) ? (
                 <Tr><Td colSpan={4} className="text-center py-8 text-gray-500">No vehicle types</Td></Tr>
               ) : types.map((t) => (
-                <Tr key={t.id}>
+                <Tr key={t.id} onClick={() => router.push(`/fleet/types/${t.id}`)}>
                   <Td className="font-medium">{t.name}</Td>
                   <Td>{t.seat_capacity} seats</Td>
                   <Td className="text-gray-500 max-w-xs truncate">{t.description || "—"}</Td>

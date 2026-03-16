@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -16,6 +17,7 @@ import { formatDate } from "@/lib/utils";
 import { Plus, Search } from "lucide-react";
 
 export default function AgentsPage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
@@ -118,7 +120,7 @@ export default function AgentsPage() {
                   </Tr>
                 ) : (
                   agents.map((a) => (
-                    <Tr key={a.id}>
+                    <Tr key={a.id} onClick={() => router.push(`/agents/${a.id}`)}>
                       <Td className="font-medium">
                         {a.first_name} {a.last_name}
                       </Td>

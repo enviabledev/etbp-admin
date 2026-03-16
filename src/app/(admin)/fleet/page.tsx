@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
 import Card from "@/components/ui/Card";
@@ -16,6 +17,7 @@ import { useToast } from "@/components/ui/Toast";
 import { Plus, Search, Settings } from "lucide-react";
 
 export default function FleetPage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
@@ -70,7 +72,7 @@ export default function FleetPage() {
                 {vehicles.length === 0 ? (
                   <Tr><Td colSpan={6} className="text-center py-8 text-gray-500">No vehicles found</Td></Tr>
                 ) : vehicles.map((v) => (
-                  <Tr key={v.id}>
+                  <Tr key={v.id} onClick={() => router.push(`/fleet/${v.id}`)}>
                     <Td className="font-mono font-medium">{v.plate_number}</Td>
                     <Td>{v.vehicle_type?.name || "—"}</Td>
                     <Td>{[v.make, v.model].filter(Boolean).join(" ") || "—"}</Td>

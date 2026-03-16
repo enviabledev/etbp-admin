@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
@@ -30,6 +31,7 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 export default function AdminUsersPage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [roleModal, setRoleModal] = useState<User | null>(null);
@@ -119,7 +121,7 @@ export default function AdminUsersPage() {
                   </Tr>
                 ) : (
                   users.map((u) => (
-                    <Tr key={u.id}>
+                    <Tr key={u.id} onClick={() => router.push(`/admin-users/${u.id}`)}>
                       <Td className="font-medium">
                         {u.first_name} {u.last_name}
                       </Td>

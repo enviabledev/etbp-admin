@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Card from "@/components/ui/Card";
 import Pagination from "@/components/ui/Pagination";
@@ -11,6 +12,7 @@ import { formatDate } from "@/lib/utils";
 import { Search } from "lucide-react";
 
 export default function CustomersPage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
@@ -70,7 +72,7 @@ export default function CustomersPage() {
                   </Tr>
                 ) : (
                   customers.map((c) => (
-                    <Tr key={c.id}>
+                    <Tr key={c.id} onClick={() => router.push(`/customers/${c.id}`)}>
                       <Td className="font-medium">
                         {c.first_name} {c.last_name}
                       </Td>

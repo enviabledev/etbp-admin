@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -31,6 +32,7 @@ function isExpired(dateStr: string | null | undefined): boolean {
 }
 
 export default function DriversPage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [availFilter, setAvailFilter] = useState<string>("");
@@ -171,7 +173,7 @@ export default function DriversPage() {
                   </Tr>
                 ) : (
                   drivers.map((d) => (
-                    <Tr key={d.id}>
+                    <Tr key={d.id} onClick={() => router.push(`/drivers/${d.id}`)}>
                       <Td className="font-medium">
                         {d.user?.first_name} {d.user?.last_name}
                       </Td>

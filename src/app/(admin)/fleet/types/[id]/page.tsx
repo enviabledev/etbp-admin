@@ -9,34 +9,39 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Input from "@/components/ui/Input";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { Table, Thead, Tbody, Th, Tr, Td } from "@/components/ui/Table";
 import { useVehicleType, useUpdateVehicleType, useVehicles } from "@/hooks/queries/useVehicles";
 import { useToast } from "@/components/ui/Toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
+import api from "@/lib/api";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 type ApiError = Error & { response?: { data?: { detail?: string } } };
 
 const COMMON_AMENITIES = [
   "wifi",
-  "air_conditioning",
+  "ac",
   "usb_charging",
-  "reclining_seats",
   "entertainment",
+  "reclining_seats",
+  "extra_legroom",
+  "refreshments",
   "luggage_storage",
   "restroom",
-  "snacks",
   "blankets",
   "reading_lights",
 ];
 
 interface SeatLayout {
-  rows?: number;
+  rows?: { seats: { type?: string; number?: string }[] }[];
   columns?: number;
+  total_rows?: number;
   seats?: { row: number; col: number; number: string; type?: string }[];
 }
 
 function SeatLayoutPreview({ layout }: { layout: SeatLayout | null }) {
-  if (!layout || !layout.rows || !layout.columns) {
+  if (!layout) {
     return (
       <p className="text-sm text-gray-500 text-center py-6">
         No seat layout configured
@@ -44,12 +49,54 @@ function SeatLayoutPreview({ layout }: { layout: SeatLayout | null }) {
     );
   }
 
-  const { rows, columns, seats } = layout;
+  // If layout has rows as an array of row objects (with seats array per row)
+  if (layout.rows && Array.isArray(layout.rows)) {
+    let seatCounter = 0;
+    return (
+      <div className="flex flex-col items-center gap-1 py-4">
+        <div className="text-xs text-gray-400 mb-2">Front</div>
+        {layout.rows.map((row, rowIdx) => (
+          <div key={rowIdx} className="flex gap-1">
+            {row.seats
+              ? row.seats.map((seat, colIdx) => {
+                  const isReal = seat.type !== "aisle" && seat.type !== "empty";
+                  if (isReal) seatCounter++;
+                  const label = isReal ? (seat.number || String(seatCounter)) : "";
+                  return (
+                    <div
+                      key={colIdx}
+                      className={`w-10 h-10 rounded flex items-center justify-center text-xs font-medium ${
+                        isReal
+                          ? "bg-sky-100 text-sky-700 border border-sky-300"
+                          : "bg-gray-50 border border-dashed border-gray-200"
+                      }`}
+                    >
+                      {label}
+                    </div>
+                  );
+                })
+              : null}
+          </div>
+        ))}
+        <div className="text-xs text-gray-400 mt-2">Back</div>
+      </div>
+    );
+  }
 
-  // Build a grid map from seat data
+  // Fallback: rows/columns as numbers with optional seats array
+  const totalRows = (layout as Record<string, unknown>).rows as number | undefined;
+  const columns = layout.columns;
+  if (!totalRows || !columns) {
+    return (
+      <p className="text-sm text-gray-500 text-center py-6">
+        No seat layout configured
+      </p>
+    );
+  }
+
   const seatMap: Record<string, string> = {};
-  if (seats && Array.isArray(seats)) {
-    seats.forEach((s) => {
+  if (layout.seats && Array.isArray(layout.seats)) {
+    layout.seats.forEach((s) => {
       seatMap[`${s.row}-${s.col}`] = s.number;
     });
   }
@@ -57,20 +104,20 @@ function SeatLayoutPreview({ layout }: { layout: SeatLayout | null }) {
   return (
     <div className="flex flex-col items-center gap-1 py-4">
       <div className="text-xs text-gray-400 mb-2">Front</div>
-      {Array.from({ length: rows }, (_, r) => (
+      {Array.from({ length: totalRows }, (_, r) => (
         <div key={r} className="flex gap-1">
           {Array.from({ length: columns }, (_, c) => {
             const key = `${r + 1}-${c + 1}`;
             const seatNumber = seatMap[key];
-            const hasSeat = seats ? !!seatNumber : true;
-            const displayLabel = seatNumber || (seats ? "" : `${r * columns + c + 1}`);
+            const hasSeat = layout.seats ? !!seatNumber : true;
+            const displayLabel = seatNumber || (layout.seats ? "" : `${r * columns + c + 1}`);
 
             return (
               <div
                 key={c}
                 className={`w-10 h-10 rounded flex items-center justify-center text-xs font-medium ${
                   hasSeat
-                    ? "bg-primary-100 text-primary-700 border border-primary-300"
+                    ? "bg-sky-100 text-sky-700 border border-sky-300"
                     : "bg-gray-50 border border-dashed border-gray-200"
                 }`}
               >
@@ -89,10 +136,27 @@ export default function VehicleTypeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { toast } = useToast();
+  const qc = useQueryClient();
 
   const { data: vehicleType, isLoading } = useVehicleType(id);
   const updateMutation = useUpdateVehicleType();
   const { data: vehiclesData } = useVehicles({ page_size: 100 });
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await api.delete(`/api/admin/vehicles/types/${id}`);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-vehicle-types"] });
+      toast("success", "Vehicle type deleted");
+      router.push("/fleet/types");
+    },
+    onError: (err: ApiError) => {
+      toast("error", err?.response?.data?.detail || "Failed to delete vehicle type");
+    },
+  });
 
   // Form state
   const [name, setName] = useState("");
@@ -232,7 +296,7 @@ export default function VehicleTypeDetailPage() {
           <Card>
             <CardHeader>
               <h3 className="font-semibold">
-                Vehicles Using This Type ({vehiclesOfType.length})
+                Assigned Vehicles ({vehiclesOfType.length})
               </h3>
             </CardHeader>
             {vehiclesOfType.length > 0 ? (
@@ -241,16 +305,14 @@ export default function VehicleTypeDetailPage() {
                   <tr>
                     <Th>Plate Number</Th>
                     <Th>Make / Model</Th>
-                    <Th>Year</Th>
                     <Th>Status</Th>
                   </tr>
                 </Thead>
                 <Tbody>
                   {vehiclesOfType.map((v) => (
-                    <Tr key={v.id}>
+                    <Tr key={v.id} onClick={() => router.push(`/fleet/${v.id}`)}>
                       <Td className="font-mono font-medium">{v.plate_number}</Td>
                       <Td>{[v.make, v.model].filter(Boolean).join(" ") || "—"}</Td>
-                      <Td>{v.year || "—"}</Td>
                       <Td>
                         <Badge status={v.status} />
                       </Td>
@@ -267,7 +329,13 @@ export default function VehicleTypeDetailPage() {
             )}
           </Card>
 
-          <div className="flex justify-end">
+          <div className="flex justify-between">
+            <Button
+              variant="danger"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" /> Delete Type
+            </Button>
             <Button onClick={handleSave} loading={updateMutation.isPending}>
               Save Changes
             </Button>
@@ -312,6 +380,21 @@ export default function VehicleTypeDetailPage() {
           </CardBody>
         </Card>
       </div>
+
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={() => deleteMutation.mutate()}
+        title="Delete Vehicle Type"
+        message={`Are you sure you want to delete "${vehicleType.name}"? This action cannot be undone. ${
+          vehiclesOfType.length > 0
+            ? `There are ${vehiclesOfType.length} vehicle(s) using this type.`
+            : ""
+        }`}
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleteMutation.isPending}
+      />
     </>
   );
 }
