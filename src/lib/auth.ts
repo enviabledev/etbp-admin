@@ -4,13 +4,13 @@ import type { TokenResponse, User } from "@/types";
 
 export async function login(email: string, password: string): Promise<TokenResponse> {
   const { data } = await api.post<TokenResponse>("/api/v1/auth/login", { email, password });
-  Cookies.set("access_token", data.access_token, { expires: 1 });
-  Cookies.set("refresh_token", data.refresh_token, { expires: 30 });
+  Cookies.set("admin_access_token", data.access_token, { expires: 1 });
+  Cookies.set("admin_refresh_token", data.refresh_token, { expires: 30 });
   return data;
 }
 
 export async function logout(): Promise<void> {
-  const refreshToken = Cookies.get("refresh_token");
+  const refreshToken = Cookies.get("admin_refresh_token");
   if (refreshToken) {
     try {
       await api.post("/api/v1/auth/logout", { refresh_token: refreshToken });
@@ -18,8 +18,8 @@ export async function logout(): Promise<void> {
       // Ignore errors during logout
     }
   }
-  Cookies.remove("access_token");
-  Cookies.remove("refresh_token");
+  Cookies.remove("admin_access_token");
+  Cookies.remove("admin_refresh_token");
 }
 
 export async function getMe(): Promise<User> {
@@ -28,9 +28,9 @@ export async function getMe(): Promise<User> {
 }
 
 export function getAccessToken(): string | undefined {
-  return Cookies.get("access_token");
+  return Cookies.get("admin_access_token");
 }
 
 export function isAuthenticated(): boolean {
-  return !!Cookies.get("access_token");
+  return !!Cookies.get("admin_access_token");
 }
