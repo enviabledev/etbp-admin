@@ -1,16 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import Header from "@/components/layout/Header";
 import Card, { CardBody, CardHeader } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
+import Modal from "@/components/ui/Modal";
+import Select from "@/components/ui/Select";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Table, Thead, Tbody, Th, Tr, Td } from "@/components/ui/Table";
+import { useToast } from "@/components/ui/Toast";
+import { useVehicles } from "@/hooks/queries/useVehicles";
+import { useDrivers } from "@/hooks/queries/useDrivers";
 import { cn, formatCurrency, formatDate, formatTime } from "@/lib/utils";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Truck } from "lucide-react";
 import api from "@/lib/api";
 
 interface Seat {
@@ -35,7 +41,7 @@ interface TripDetail {
   available_seats: number;
   total_seats: number;
   seats: Seat[];
-  bookings: { id: string; reference: string; status: string; passenger_count: number; contact_phone: string | null; passengers?: { first_name: string; last_name: string; seat_id: string; checked_in: boolean }[] }[];
+  bookings: { id: string; reference: string; status: string; passenger_count: number; passengers?: { first_name: string; last_name: string; seat_id: string; checked_in: boolean }[] }[];
 }
 
 const seatColors: Record<string, string> = {
@@ -47,6 +53,13 @@ const seatColors: Record<string, string> = {
 export default function TripDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { toast } = useToast();
+  const qc = useQueryClient();
+
+  const [showAssign, setShowAssign] = useState(false);
+  const [vehicleId, setVehicleId] = useState("");
+  const [driverId, setDriverId] = useState("");
+  const [assigning, setAssigning] = useState(false);
 
   const { data: trip, isLoading } = useQuery<TripDetail>({
     queryKey: ["admin-trip-detail", id],
@@ -57,14 +70,48 @@ export default function TripDetailPage() {
     enabled: !!id,
   });
 
+  const { data: vehiclesData } = useVehicles({ status: "active", page_size: 100 });
+  const { data: driversData } = useDrivers({ is_available: true, page_size: 100 });
+
   if (isLoading || !trip) return <LoadingSpinner text="Loading trip..." />;
+
+  const isAssigned = !!(trip.vehicle || trip.driver);
+
+  const handleAssign = async () => {
+    if (!vehicleId && !driverId) {
+      toast("error", "Select a vehicle or driver");
+      return;
+    }
+    setAssigning(true);
+    try {
+      const payload: Record<string, string> = {};
+      if (vehicleId) payload.vehicle_id = vehicleId;
+      if (driverId) payload.driver_id = driverId;
+      await api.put(`/api/admin/schedules/trips/${id}/assign`, payload);
+      toast("success", "Vehicle and driver assigned");
+      setShowAssign(false);
+      qc.invalidateQueries({ queryKey: ["admin-trip-detail", id] });
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { detail?: string }; status?: number } };
+      const detail = axiosErr?.response?.data?.detail || "Failed to assign";
+      toast("error", detail);
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  const openAssignModal = () => {
+    setVehicleId("");
+    setDriverId("");
+    setShowAssign(true);
+  };
 
   // Build seat grid
   const maxRow = Math.max(...trip.seats.map((s) => s.seat_row || 0), 0);
   const maxCol = Math.max(...trip.seats.map((s) => s.seat_column || 0), 0);
   const seatMap = new Map(trip.seats.map((s) => [`${s.seat_row}-${s.seat_column}`, s]));
 
-  // Build passenger manifest from bookings
+  // Build passenger manifest
   const passengers: { name: string; reference: string; seat: string; checked_in: boolean }[] = [];
   for (const booking of trip.bookings || []) {
     if (booking.status === "cancelled" || booking.status === "expired") continue;
@@ -83,7 +130,7 @@ export default function TripDetailPage() {
   return (
     <>
       <Breadcrumb items={[{ label: "Trips", href: "/trips" }, { label: `${trip.route?.name || "Trip"} — ${formatDate(trip.departure_date)}` }]} />
-      <Header title={`${trip.route?.name || "Trip Detail"}`} subtitle={`${formatDate(trip.departure_date)} at ${formatTime(trip.departure_time)}`}
+      <Header title={trip.route?.name || "Trip Detail"} subtitle={`${formatDate(trip.departure_date)} at ${formatTime(trip.departure_time)}`}
         actions={<Button variant="ghost" onClick={() => router.push("/trips")}><ArrowLeft className="h-4 w-4 mr-2" /> Back</Button>} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -108,8 +155,8 @@ export default function TripDetailPage() {
                       const seat = seatMap.get(`${r + 1}-${c + 1}`);
                       if (!seat) return <div key={`${r}-${c}`} className="w-12 h-12" />;
                       return (
-                        <div key={seat.id} title={`${seat.seat_number} — ${seat.status}`}
-                          className={cn("w-12 h-12 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition-colors", seatColors[seat.status] || "bg-gray-100 text-gray-400 border-gray-200")}>
+                        <div key={seat.id} title={`Seat ${seat.seat_number} — ${seat.status}`}
+                          className={cn("w-12 h-12 rounded-lg border-2 flex items-center justify-center text-sm font-bold", seatColors[seat.status] || "bg-gray-100 text-gray-400 border-gray-200")}>
                           {seat.seat_number}
                         </div>
                       );
@@ -155,15 +202,81 @@ export default function TripDetailPage() {
               <div className="flex justify-between"><span className="text-sm text-gray-500">Route</span><span className="text-sm">{trip.route?.name || "—"}</span></div>
             </CardBody>
           </Card>
+
           <Card>
-            <CardHeader><h3 className="font-semibold">Assignment</h3></CardHeader>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Assignment</h3>
+                <Button size="sm" variant={isAssigned ? "secondary" : "primary"} onClick={openAssignModal}>
+                  <Truck className="h-3 w-3 mr-1" /> {isAssigned ? "Reassign" : "Assign"}
+                </Button>
+              </div>
+            </CardHeader>
             <CardBody className="space-y-3">
-              <div className="flex justify-between"><span className="text-sm text-gray-500">Vehicle</span><span className="text-sm font-mono">{trip.vehicle?.plate_number || "Unassigned"}</span></div>
-              <div className="flex justify-between"><span className="text-sm text-gray-500">Driver</span><span className="text-sm">{trip.driver ? `${trip.driver.user?.first_name} ${trip.driver.user?.last_name}` : "Unassigned"}</span></div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">Vehicle</span>
+                {trip.vehicle ? (
+                  <span className="text-sm font-mono font-medium text-gray-900">{trip.vehicle.plate_number}</span>
+                ) : (
+                  <span className="text-sm text-gray-400 italic">Unassigned</span>
+                )}
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">Driver</span>
+                {trip.driver ? (
+                  <span className="text-sm font-medium text-gray-900">{trip.driver.user?.first_name} {trip.driver.user?.last_name}</span>
+                ) : (
+                  <span className="text-sm text-gray-400 italic">Unassigned</span>
+                )}
+              </div>
+              {trip.vehicle?.vehicle_type && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-500">Type</span>
+                  <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">{trip.vehicle.vehicle_type.name}</span>
+                </div>
+              )}
             </CardBody>
           </Card>
         </div>
       </div>
+
+      {/* Assign Modal */}
+      <Modal isOpen={showAssign} onClose={() => setShowAssign(false)} title="Assign Vehicle & Driver" size="sm">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            {trip.route?.name} — {formatDate(trip.departure_date)} at {formatTime(trip.departure_time)}
+          </p>
+
+          <Select
+            label="Vehicle"
+            value={vehicleId}
+            onChange={(e) => setVehicleId(e.target.value)}
+            placeholder="Select vehicle..."
+            options={(vehiclesData?.items || []).map((v) => ({
+              value: v.id,
+              label: `${v.plate_number} — ${v.vehicle_type?.name || ""}`,
+            }))}
+          />
+
+          <Select
+            label="Driver"
+            value={driverId}
+            onChange={(e) => setDriverId(e.target.value)}
+            placeholder="Select driver..."
+            options={(driversData?.items || []).map((d) => ({
+              value: d.id,
+              label: `${d.user?.first_name || ""} ${d.user?.last_name || ""} — ${d.license_number}`,
+            }))}
+          />
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" onClick={() => setShowAssign(false)}>Cancel</Button>
+            <Button onClick={handleAssign} loading={assigning} disabled={!vehicleId && !driverId}>
+              Assign
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }
