@@ -10,7 +10,8 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Table, Thead, Tbody, Th, Tr, Td } from "@/components/ui/Table";
 import { useAdminBookings } from "@/hooks/queries/useBookings";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
-import { Search } from "lucide-react";
+import Button from "@/components/ui/Button";
+import { Search, Plus } from "lucide-react";
 
 export default function BookingsPage() {
   const [search, setSearch] = useState("");
@@ -33,7 +34,9 @@ export default function BookingsPage() {
 
   return (
     <>
-      <Header title="Bookings" subtitle={`${data?.total || 0} bookings`} />
+      <Header title="Bookings" subtitle={`${data?.total || 0} bookings`}
+        actions={<Button onClick={() => router.push("/bookings/new")}><Plus className="h-4 w-4 mr-2" /> New Booking</Button>}
+      />
 
       <Card className="mb-6">
         <div className="p-4 flex flex-wrap gap-4">

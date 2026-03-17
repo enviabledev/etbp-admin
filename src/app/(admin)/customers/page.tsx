@@ -75,6 +75,9 @@ export default function CustomersPage() {
                     <Tr key={c.id} onClick={() => router.push(`/customers/${c.id}`)}>
                       <Td className="font-medium">
                         {c.first_name} {c.last_name}
+                        {(c as unknown as Record<string, unknown>).has_logged_in === false && (
+                          <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700">Terminal only</span>
+                        )}
                       </Td>
                       <Td className="text-sm text-gray-500">{c.email || "—"}</Td>
                       <Td className="text-sm text-gray-500">{c.phone || "—"}</Td>
