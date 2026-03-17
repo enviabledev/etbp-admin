@@ -57,7 +57,14 @@ export default function ScheduleDetailPage() {
   const updateMutation = useMutation({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mutationFn: async (updates: Record<string, any>) => {
-      const { data } = await api.put(`/api/admin/schedules/${id}`, updates);
+      // Convert empty strings to null for optional numeric fields
+      const payload = { ...updates };
+      if (payload.price_override === "" || payload.price_override === undefined) {
+        payload.price_override = null;
+      } else if (payload.price_override != null) {
+        payload.price_override = Number(payload.price_override);
+      }
+      const { data } = await api.put(`/api/admin/schedules/${id}`, payload);
       return data;
     },
     onSuccess: () => {
