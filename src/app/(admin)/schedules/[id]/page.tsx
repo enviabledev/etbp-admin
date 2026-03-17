@@ -153,7 +153,28 @@ export default function ScheduleDetailPage() {
               {isEditing ? (
                 <div className="grid grid-cols-2 gap-4">
                   <Input label="Departure Time" type="time" value={form.departure_time || ""} onChange={(e) => setForm({ ...form, departure_time: e.target.value })} />
-                  <Input label="Recurrence" value={form.recurrence || ""} onChange={(e) => setForm({ ...form, recurrence: e.target.value })} />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Recurrence</label>
+                    <div className="flex flex-wrap gap-2">
+                      {["mon","tue","wed","thu","fri","sat","sun"].map((day) => {
+                        const days = (form.recurrence || "daily").toLowerCase().split(",").map((d: string) => d.trim());
+                        const isDaily = days.includes("daily");
+                        const checked = isDaily || days.includes(day);
+                        return (
+                          <label key={day} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                            <input type="checkbox" checked={checked} className="rounded border-gray-300"
+                              onChange={(e) => {
+                                let current = (form.recurrence || "").toLowerCase().split(",").map((d: string) => d.trim()).filter((d: string) => d && d !== "daily");
+                                if (e.target.checked) { current.push(day); } else { current = current.filter((d: string) => d !== day); }
+                                setForm({ ...form, recurrence: current.length === 7 ? "daily" : current.join(",") });
+                              }}
+                            />
+                            <span className="capitalize">{day}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
                   <Input label="Valid From" type="date" value={form.valid_from || ""} onChange={(e) => setForm({ ...form, valid_from: e.target.value })} />
                   <Input label="Valid Until" type="date" value={form.valid_until || ""} onChange={(e) => setForm({ ...form, valid_until: e.target.value })} />
                   <Input label="Price Override" type="number" value={form.price_override?.toString() || ""} onChange={(e) => setForm({ ...form, price_override: parseFloat(e.target.value) || null })} />

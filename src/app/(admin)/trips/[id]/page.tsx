@@ -196,7 +196,21 @@ export default function TripDetailPage() {
           <Card>
             <CardHeader><h3 className="font-semibold">Trip Info</h3></CardHeader>
             <CardBody className="space-y-3">
-              <div className="flex justify-between"><span className="text-sm text-gray-500">Status</span><Badge status={trip.status} /></div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">Status</span>
+                <select value={trip.status} className="text-sm border rounded px-2 py-1"
+                  onChange={async (e) => {
+                    try {
+                      await api.put(`/api/admin/schedules/trips/${id}`, { status: e.target.value });
+                      qc.invalidateQueries({ queryKey: ["admin-trip-detail", id] });
+                      toast("success", "Status updated");
+                    } catch { toast("error", "Failed to update status"); }
+                  }}>
+                  {["scheduled","boarding","departed","in_transit","arrived","completed","cancelled"].map(s => (
+                    <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+                  ))}
+                </select>
+              </div>
               <div className="flex justify-between"><span className="text-sm text-gray-500">Price</span><span className="font-medium">{formatCurrency(trip.price)}</span></div>
               <div className="flex justify-between"><span className="text-sm text-gray-500">Seats</span><span>{trip.available_seats}/{trip.total_seats}</span></div>
               <div className="flex justify-between"><span className="text-sm text-gray-500">Route</span><span className="text-sm">{trip.route?.name || "—"}</span></div>

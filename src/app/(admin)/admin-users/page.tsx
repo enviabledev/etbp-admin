@@ -15,7 +15,10 @@ import { useAdminUsersList } from "@/hooks/queries/useAdminUsers";
 import { useChangeUserRole, useToggleUserActive } from "@/hooks/queries/useUsers";
 import { useToast } from "@/components/ui/Toast";
 import { formatDate } from "@/lib/utils";
-import { Search, Shield } from "lucide-react";
+import Input from "@/components/ui/Input";
+import { Search, Shield, Plus } from "lucide-react";
+import api from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
 import type { User } from "@/types";
 
 const ADMIN_ROLES = [
@@ -36,7 +39,11 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [roleModal, setRoleModal] = useState<User | null>(null);
   const [newRole, setNewRole] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState({ email: "", password: "", first_name: "", last_name: "", phone: "", role: "admin" });
+  const [creating, setCreating] = useState(false);
   const { toast } = useToast();
+  const qc = useQueryClient();
 
   const { data, isLoading } = useAdminUsersList({
     search: search || undefined,
@@ -76,7 +83,9 @@ export default function AdminUsersPage() {
 
   return (
     <>
-      <Header title="Admin Users" subtitle={`${data?.total || 0} admin users`} />
+      <Header title="Admin Users" subtitle={`${data?.total || 0} admin users`}
+        actions={<Button onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-2" /> Create Admin</Button>}
+      />
 
       <Card className="mb-6">
         <div className="p-4 flex gap-4">
@@ -202,6 +211,35 @@ export default function AdminUsersPage() {
             <Button onClick={handleChangeRole} loading={changeRoleMutation.isPending}>
               Update Role
             </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Create Admin User" size="lg">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="First Name" value={createForm.first_name} onChange={(e) => setCreateForm({ ...createForm, first_name: e.target.value })} />
+            <Input label="Last Name" value={createForm.last_name} onChange={(e) => setCreateForm({ ...createForm, last_name: e.target.value })} />
+          </div>
+          <Input label="Email" type="email" value={createForm.email} onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })} />
+          <Input label="Phone" value={createForm.phone} onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })} />
+          <Input label="Password" type="password" value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} />
+          <Select label="Role" value={createForm.role} options={ADMIN_ROLES} onChange={(e) => setCreateForm({ ...createForm, role: e.target.value })} />
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button>
+            <Button loading={creating} onClick={async () => {
+              setCreating(true);
+              try {
+                await api.post("/api/admin/users/admins", createForm);
+                toast("success", "Admin user created");
+                setShowCreate(false);
+                setCreateForm({ email: "", password: "", first_name: "", last_name: "", phone: "", role: "admin" });
+                qc.invalidateQueries({ queryKey: ["admin-users-list"] });
+              } catch (err: unknown) {
+                const e = err as { response?: { data?: { detail?: string } } };
+                toast("error", e?.response?.data?.detail || "Failed to create admin");
+              } finally { setCreating(false); }
+            }}>Create</Button>
           </div>
         </div>
       </Modal>

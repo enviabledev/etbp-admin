@@ -11,7 +11,7 @@ import Select from "@/components/ui/Select";
 import Pagination from "@/components/ui/Pagination";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Table, Thead, Tbody, Th, Tr, Td } from "@/components/ui/Table";
-import { usePromos, useCreatePromo, useDeactivatePromo } from "@/hooks/queries/usePromos";
+import { usePromos, useCreatePromo, useUpdatePromo, useDeactivatePromo } from "@/hooks/queries/usePromos";
 import { useToast } from "@/components/ui/Toast";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Plus, Search, XCircle } from "lucide-react";
@@ -37,10 +37,12 @@ export default function PromosPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
+  const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
   const { toast } = useToast();
 
   const { data, isLoading } = usePromos({ search: search || undefined, page, page_size: 20 });
   const createMutation = useCreatePromo();
+  const updateMutation = useUpdatePromo();
   const deactivateMutation = useDeactivatePromo();
 
   const promos = data?.items || [];
@@ -97,7 +99,12 @@ export default function PromosPage() {
                 {promos.length === 0 ? (
                   <Tr><Td colSpan={8} className="text-center py-8 text-gray-500">No promos found</Td></Tr>
                 ) : promos.map((p) => (
-                  <Tr key={p.id}>
+                  <Tr key={p.id} className="cursor-pointer hover:bg-gray-50" onClick={() => setEditing({
+                    id: p.id, description: p.description || "", discount_value: p.discount_value,
+                    max_discount: p.max_discount || "", min_booking_amount: p.min_booking_amount || "",
+                    usage_limit: p.usage_limit || "", valid_from: p.valid_from?.split("T")[0] || "",
+                    valid_until: p.valid_until?.split("T")[0] || "", is_active: p.is_active,
+                  })}>
                     <Td className="font-mono font-bold text-primary-600">{p.code}</Td>
                     <Td className="capitalize">{p.discount_type}</Td>
                     <Td>{p.discount_type === "percentage" ? `${p.discount_value}%` : formatCurrency(p.discount_value)}</Td>
@@ -148,6 +155,38 @@ export default function PromosPage() {
             <Button type="submit" loading={createMutation.isPending}>Create Promo</Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal isOpen={!!editing} onClose={() => setEditing(null)} title="Edit Promo" size="md">
+        {editing && (
+          <div className="space-y-4">
+            <Input label="Description" value={editing.description as string} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
+            <div className="grid grid-cols-3 gap-4">
+              <Input label="Discount Value" type="number" value={String(editing.discount_value)} onChange={(e) => setEditing({ ...editing, discount_value: parseFloat(e.target.value) || 0 })} />
+              <Input label="Max Discount" type="number" value={String(editing.max_discount || "")} onChange={(e) => setEditing({ ...editing, max_discount: parseFloat(e.target.value) || null })} />
+              <Input label="Min Booking" type="number" value={String(editing.min_booking_amount || "")} onChange={(e) => setEditing({ ...editing, min_booking_amount: parseFloat(e.target.value) || null })} />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <Input label="Usage Limit" type="number" value={String(editing.usage_limit || "")} onChange={(e) => setEditing({ ...editing, usage_limit: parseInt(e.target.value) || null })} />
+              <Input label="Valid From" type="date" value={editing.valid_from as string} onChange={(e) => setEditing({ ...editing, valid_from: e.target.value || null })} />
+              <Input label="Valid Until" type="date" value={editing.valid_until as string} onChange={(e) => setEditing({ ...editing, valid_until: e.target.value || null })} />
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" checked={editing.is_active as boolean} onChange={(e) => setEditing({ ...editing, is_active: e.target.checked })} className="rounded border-gray-300" />
+              <label className="text-sm">Active</label>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="secondary" onClick={() => setEditing(null)}>Cancel</Button>
+              <Button loading={updateMutation.isPending} onClick={() => {
+                const { id, ...payload } = editing;
+                updateMutation.mutate({ id: id as string, ...payload }, {
+                  onSuccess: () => { setEditing(null); toast("success", "Promo updated"); },
+                  onError: () => toast("error", "Failed to update promo"),
+                });
+              }}>Save Changes</Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </>
   );

@@ -8,11 +8,12 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Table, Thead, Tbody, Th, Tr, Td } from "@/components/ui/Table";
-import { useCheckInBooking } from "@/hooks/queries/useBookings";
+import { useCheckInBooking, useUpdateBookingStatus } from "@/hooks/queries/useBookings";
 import { useToast } from "@/components/ui/Toast";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import api from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Booking } from "@/types";
 
 export default function BookingDetailPage() {
@@ -35,6 +36,8 @@ export default function BookingDetailPage() {
   });
 
   const checkInMutation = useCheckInBooking();
+  const statusMutation = useUpdateBookingStatus();
+  const qc = useQueryClient();
 
   if (isLoading || !booking) return <LoadingSpinner text="Loading booking..." />;
 
@@ -88,7 +91,21 @@ export default function BookingDetailPage() {
           <Card>
             <CardHeader><h3 className="font-semibold">Booking Details</h3></CardHeader>
             <CardBody className="space-y-3">
-              <div className="flex justify-between"><span className="text-sm text-gray-500">Status</span><Badge status={booking.status} /></div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">Status</span>
+                <select value={booking.status} className="text-sm border rounded px-2 py-1"
+                  onChange={(e) => statusMutation.mutate(
+                    { bookingId: booking.id, status: e.target.value },
+                    {
+                      onSuccess: () => { toast("success", "Status updated"); qc.invalidateQueries({ queryKey: ["admin-booking-ref", ref] }); },
+                      onError: () => toast("error", "Failed to update status"),
+                    }
+                  )}>
+                  {["pending","confirmed","checked_in","completed","cancelled","no_show"].map(s => (
+                    <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+                  ))}
+                </select>
+              </div>
               <div className="flex justify-between"><span className="text-sm text-gray-500">Amount</span><span className="font-medium">{formatCurrency(booking.total_amount)}</span></div>
               <div className="flex justify-between"><span className="text-sm text-gray-500">Currency</span><span>{booking.currency}</span></div>
               <div className="flex justify-between"><span className="text-sm text-gray-500">Passengers</span><span>{booking.passenger_count}</span></div>
