@@ -11,7 +11,9 @@ import Input from "@/components/ui/Input";
 import Pagination from "@/components/ui/Pagination";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Table, Thead, Tbody, Th, Tr, Td } from "@/components/ui/Table";
+import Select from "@/components/ui/Select";
 import { useAgents, useCreateAgent } from "@/hooks/queries/useAgents";
+import { useAllTerminals } from "@/hooks/queries/useTerminals";
 import { useToast } from "@/components/ui/Toast";
 import { formatDate } from "@/lib/utils";
 import { Plus, Search } from "lucide-react";
@@ -26,6 +28,7 @@ export default function AgentsPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [terminalId, setTerminalId] = useState("");
   const { toast } = useToast();
 
   const { data, isLoading } = useAgents({
@@ -34,6 +37,7 @@ export default function AgentsPage() {
     page_size: 20,
   });
   const createMutation = useCreateAgent();
+  const { data: terminalsData } = useAllTerminals();
 
   const agents = data?.items || [];
   const totalPages = data ? Math.ceil(data.total / 20) : 0;
@@ -44,6 +48,7 @@ export default function AgentsPage() {
     setEmail("");
     setPhone("");
     setPassword("");
+    setTerminalId("");
   };
 
   const handleCreate = () => {
@@ -54,6 +59,7 @@ export default function AgentsPage() {
       phone,
     };
     if (password) payload.password = password;
+    if (terminalId) payload.assigned_terminal_id = terminalId;
 
     createMutation.mutate(payload, {
       onSuccess: () => {
@@ -106,6 +112,7 @@ export default function AgentsPage() {
                   <Th>Name</Th>
                   <Th>Email</Th>
                   <Th>Phone</Th>
+                  <Th>Terminal</Th>
                   <Th>Bookings</Th>
                   <Th>Last Booking</Th>
                   <Th>Status</Th>
@@ -126,6 +133,7 @@ export default function AgentsPage() {
                       </Td>
                       <Td className="text-sm text-gray-500">{a.email || "—"}</Td>
                       <Td className="text-sm text-gray-500">{a.phone || "—"}</Td>
+                      <Td className="text-sm text-gray-500">{(a as unknown as Record<string, unknown>).terminal_name as string || <span className="text-amber-500 text-xs">Not assigned</span>}</Td>
                       <Td>{(a as unknown as Record<string, unknown>).booking_count as number ?? 0}</Td>
                       <Td className="text-sm text-gray-500">
                         {(a as unknown as Record<string, unknown>).last_booking_date
@@ -181,6 +189,15 @@ export default function AgentsPage() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="+234..."
+          />
+          <Select
+            label="Assigned Terminal"
+            value={terminalId}
+            onChange={(e) => setTerminalId(e.target.value)}
+            options={[
+              { value: "", label: "Select terminal..." },
+              ...(terminalsData?.items || []).map((t) => ({ value: t.id, label: `${t.name} (${t.city})` })),
+            ]}
           />
           <Input
             label="Password (optional)"
