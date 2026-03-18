@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Route, MapPin, Calendar, Bus, Truck, Users,
   Ticket, Tag, BarChart3, ChevronLeft, ChevronRight, LogOut, UserCircle,
   Settings, Menu, X, Shield, UserCheck, Bell, Star, Wrench, Building2,
-  Image, Search,
+  Image, Search, MessageCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { useLogout, useUser } from "@/hooks/useAuth";
@@ -64,6 +64,7 @@ const navSections: NavSection[] = [
     label: "Communications",
     roles: ["admin", "super_admin"],
     items: [
+      { href: "/support/messages", label: "Messages", icon: MessageCircle },
       { href: "/notifications", label: "Notifications", icon: Bell },
       { href: "/banners", label: "Banners", icon: Image },
     ],
