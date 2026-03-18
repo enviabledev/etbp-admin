@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Route, MapPin, Calendar, Bus, Truck, Users,
   Ticket, Tag, BarChart3, ChevronLeft, ChevronRight, LogOut, UserCircle,
-  Settings, Menu, X, Shield, UserCheck, Bell,
+  Settings, Menu, X, Shield, UserCheck, Bell, Star,
 } from "lucide-react";
 import { useState } from "react";
 import { useLogout, useUser } from "@/hooks/useAuth";
@@ -43,6 +43,7 @@ const navSections: NavSection[] = [
     items: [
       { href: "/bookings", label: "Bookings", icon: Ticket },
       { href: "/customers", label: "Customers", icon: Users },
+      { href: "/reviews", label: "Reviews", icon: Star },
       { href: "/promos", label: "Promos", icon: Tag },
       { href: "/reports", label: "Reports", icon: BarChart3 },
     ],
