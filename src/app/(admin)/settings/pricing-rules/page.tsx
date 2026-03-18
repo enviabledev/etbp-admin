@@ -35,7 +35,7 @@ export default function PricingRulesPage() {
   const [maxDaysBefore, setMaxDaysBefore] = useState("");
   const [simDate, setSimDate] = useState("");
   const [simTime, setSimTime] = useState("08:00");
-  const [simResult, setSimResult] = useState<any>(null);
+  const [simResult, setSimResult] = useState<Record<string, unknown> | null>(null);
   const [simulating, setSimulating] = useState(false);
   const { toast } = useToast();
 
@@ -128,17 +128,17 @@ export default function PricingRulesPage() {
             <div className="mt-4 bg-gray-50 rounded-lg p-4">
               <div className="flex justify-between mb-2">
                 <span className="text-sm text-gray-500">Base price</span>
-                <span className="text-sm">{formatCurrency(simResult.base_price)}</span>
+                <span className="text-sm">{formatCurrency(simResult.base_price as number)}</span>
               </div>
-              {simResult.adjustments?.map((adj: any, i: number) => (
+              {(simResult.adjustments as Array<Record<string, unknown>>)?.map((adj, i: number) => (
                 <div key={i} className="flex justify-between mb-1">
-                  <span className="text-xs text-gray-500">{adj.rule_name}</span>
-                  <span className={`text-xs font-medium ${adj.change > 0 ? "text-red-600" : "text-green-600"}`}>{adj.change > 0 ? "+" : ""}{formatCurrency(adj.change)}</span>
+                  <span className="text-xs text-gray-500">{adj.rule_name as string}</span>
+                  <span className={`text-xs font-medium ${(adj.change as number) > 0 ? "text-red-600" : "text-green-600"}`}>{(adj.change as number) > 0 ? "+" : ""}{formatCurrency(adj.change as number)}</span>
                 </div>
               ))}
               <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between">
                 <span className="font-medium">Final price</span>
-                <span className="font-bold text-lg">{formatCurrency(simResult.final_price)}</span>
+                <span className="font-bold text-lg">{formatCurrency(simResult.final_price as number)}</span>
               </div>
             </div>
           )}

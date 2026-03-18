@@ -3,17 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Star, Flag, MessageCircle, Eye } from "lucide-react";
+import { Star, Eye } from "lucide-react";
 import api from "@/lib/api";
-import { useToast } from "@/components/ui/Toast";
 import { formatDateTime, cn } from "@/lib/utils";
-import Button from "@/components/ui/Button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 export default function ReviewsPage() {
-  const [page, setPage] = useState(1);
+  const [page] = useState(1);
   const [flaggedOnly, setFlaggedOnly] = useState(false);
-  const { toast } = useToast();
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-reviews", page, flaggedOnly],
