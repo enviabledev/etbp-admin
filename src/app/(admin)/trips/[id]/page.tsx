@@ -198,18 +198,24 @@ export default function TripDetailPage() {
             <CardBody className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-500">Status</span>
-                <select value={trip.status} className="text-sm border rounded px-2 py-1"
-                  onChange={async (e) => {
-                    try {
-                      await api.put(`/api/admin/schedules/trips/${id}`, { status: e.target.value });
-                      qc.invalidateQueries({ queryKey: ["admin-trip-detail", id] });
-                      toast("success", "Status updated");
-                    } catch { toast("error", "Failed to update status"); }
-                  }}>
-                  {["scheduled","boarding","departed","en_route","arrived","completed","cancelled"].map(s => (
-                    <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
-                  ))}
-                </select>
+                {["completed", "cancelled"].includes(trip.status) ? (
+                  <span className={`text-sm font-medium px-2 py-1 rounded ${trip.status === "completed" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                    {trip.status.replace(/_/g, " ")}
+                  </span>
+                ) : (
+                  <select value={trip.status} className="text-sm border rounded px-2 py-1"
+                    onChange={async (e) => {
+                      try {
+                        await api.put(`/api/admin/schedules/trips/${id}`, { status: e.target.value });
+                        qc.invalidateQueries({ queryKey: ["admin-trip-detail", id] });
+                        toast("success", "Status updated");
+                      } catch { toast("error", "Failed to update status"); }
+                    }}>
+                    {["scheduled","boarding","departed","en_route","arrived","completed","cancelled"].map(s => (
+                      <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div className="flex justify-between"><span className="text-sm text-gray-500">Price</span><span className="font-medium">{formatCurrency(trip.price)}</span></div>
               <div className="flex justify-between"><span className="text-sm text-gray-500">Seats</span><span>{trip.available_seats}/{trip.total_seats}</span></div>
