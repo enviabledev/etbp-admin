@@ -32,7 +32,7 @@ export default function NewNotificationPage() {
   const [channel, setChannel] = useState("push");
   const [targetType, setTargetType] = useState("all_customers");
   const [targetValue, setTargetValue] = useState("");
-  const [preview, setPreview] = useState<any>(null);
+  const [preview, setPreview] = useState<{ count: number; sample: { id: string; name: string; email?: string; phone?: string }[] } | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
 
@@ -49,8 +49,9 @@ export default function NewNotificationPage() {
       if (!createdId) setCreatedId(campaign.id);
       const result = await previewMutation.mutateAsync(campaign.id);
       setPreview(result);
-    } catch (e: any) {
-      toast.toast("error",e?.response?.data?.detail || "Preview failed");
+    } catch (e: unknown) {
+      const msg = (e as Record<string, Record<string, Record<string, string>>>)?.response?.data?.detail || "Preview failed";
+      toast.toast("error", msg);
     }
   };
 
@@ -62,8 +63,9 @@ export default function NewNotificationPage() {
       await sendMutation.mutateAsync(createdId);
       toast.toast("success","Campaign sent!");
       router.push("/notifications");
-    } catch (e: any) {
-      toast.toast("error",e?.response?.data?.detail || "Send failed");
+    } catch (e: unknown) {
+      const msg = (e as Record<string, Record<string, Record<string, string>>>)?.response?.data?.detail || "Send failed";
+      toast.toast("error", msg);
     } finally {
       setSending(false);
     }
@@ -80,8 +82,9 @@ export default function NewNotificationPage() {
       });
       toast.toast("success","Draft saved");
       router.push("/notifications");
-    } catch (e: any) {
-      toast.toast("error",e?.response?.data?.detail || "Save failed");
+    } catch (e: unknown) {
+      const msg = (e as Record<string, Record<string, Record<string, string>>>)?.response?.data?.detail || "Save failed";
+      toast.toast("error", msg);
     }
   };
 
@@ -157,7 +160,7 @@ export default function NewNotificationPage() {
             {preview.sample?.length > 0 && (
               <div className="bg-gray-50 rounded-lg p-3 space-y-1">
                 <p className="text-xs text-gray-400 mb-2">Sample (first {preview.sample.length})</p>
-                {preview.sample.map((u: any) => (
+                {preview.sample.map((u) => (
                   <p key={u.id} className="text-sm text-gray-700">{u.name} — {u.email || u.phone || "\u2014"}</p>
                 ))}
               </div>

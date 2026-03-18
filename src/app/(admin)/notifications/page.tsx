@@ -18,7 +18,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default function NotificationsPage() {
-  const [page, setPage] = useState(1);
+  const [page] = useState(1);
   const { data, isLoading } = useCampaigns({ page });
   const deleteMutation = useDeleteCampaign();
   const sendMutation = useSendCampaign();
@@ -64,7 +64,8 @@ export default function NotificationsPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {campaigns.map((c: any) => (
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {campaigns.map((c: Record<string, any>) => (
                 <tr key={c.id}>
                   <td className="px-5 py-4">
                     <p className="font-medium text-gray-900 truncate max-w-[200px]">{c.title}</p>
