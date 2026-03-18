@@ -101,11 +101,22 @@ export default function BookingDetailPage() {
                       onError: () => toast("error", "Failed to update status"),
                     }
                   )}>
-                  {["pending","confirmed","checked_in","completed","cancelled","no_show"].map(s => (
+                  {(({
+                    pending: ["confirmed", "cancelled"],
+                    confirmed: ["checked_in", "cancelled", "no_show", "completed"],
+                    checked_in: ["completed"],
+                    expired: ["pending", "confirmed", "cancelled"],
+                    cancelled: ["pending", "confirmed"],
+                    completed: [] as string[],
+                    no_show: [] as string[],
+                  } as Record<string, string[]>)[booking.status] || []).map(s => (
                     <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
                   ))}
                 </select>
               </div>
+              {(booking as unknown as Record<string, string>).payment_deadline ? (
+                <div className="flex justify-between"><span className="text-sm text-gray-500">Payment Deadline</span><span className="text-xs font-medium text-amber-600">{formatDateTime((booking as unknown as Record<string, string>).payment_deadline)}</span></div>
+              ) : null}
               <div className="flex justify-between"><span className="text-sm text-gray-500">Amount</span><span className="font-medium">{formatCurrency(booking.total_amount)}</span></div>
               <div className="flex justify-between"><span className="text-sm text-gray-500">Currency</span><span>{booking.currency}</span></div>
               <div className="flex justify-between"><span className="text-sm text-gray-500">Passengers</span><span>{booking.passenger_count}</span></div>
