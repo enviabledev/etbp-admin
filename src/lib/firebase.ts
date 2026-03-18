@@ -1,6 +1,8 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
+import type { QueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
+import { handlePushRefresh } from "@/lib/push-refresh";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAE_RgeeXP1j2xUvF7HxgwLTS7rcNl0rQk",
@@ -13,7 +15,13 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-export async function initPushNotifications(appType: string = "customer") {
+let _queryClient: QueryClient | null = null;
+
+export function setQueryClient(qc: QueryClient) {
+  _queryClient = qc;
+}
+
+export async function initPushNotifications(appType: string = "admin") {
   try {
     if (typeof window === "undefined") return null;
     const supported = await isSupported();
@@ -46,6 +54,10 @@ export async function initPushNotifications(appType: string = "customer") {
           body: payload.notification?.body || "",
           icon: "/icon.png",
         });
+      }
+      // Refresh relevant data
+      if (_queryClient && payload.data?.type) {
+        handlePushRefresh(_queryClient, payload.data.type);
       }
     });
 
