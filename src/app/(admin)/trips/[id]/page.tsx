@@ -206,7 +206,7 @@ export default function TripDetailPage() {
                       toast("success", "Status updated");
                     } catch { toast("error", "Failed to update status"); }
                   }}>
-                  {["scheduled","boarding","departed","in_transit","arrived","completed","cancelled"].map(s => (
+                  {["scheduled","boarding","departed","en_route","arrived","completed","cancelled"].map(s => (
                     <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
                   ))}
                 </select>
