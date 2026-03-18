@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Route, MapPin, Calendar, Bus, Truck, Users,
   Ticket, Tag, BarChart3, ChevronLeft, ChevronRight, LogOut, UserCircle,
   Settings, Menu, X, Shield, UserCheck, Bell, Star, Wrench, Building2,
-  Image, Search, MessageCircle,
+  Image, Search, MessageCircle, TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
 import { useLogout, useUser } from "@/hooks/useAuth";
@@ -50,6 +50,7 @@ const navSections: NavSection[] = [
       { href: "/reports", label: "Reports", icon: BarChart3 },
       { href: "/corporate", label: "Corporate", icon: Building2 },
       { href: "/lost-found", label: "Lost & Found", icon: Search },
+      { href: "/analytics", label: "Analytics", icon: TrendingUp },
     ],
   },
   {
