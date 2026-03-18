@@ -11,9 +11,11 @@ import { Table, Thead, Tbody, Th, Tr, Td } from "@/components/ui/Table";
 import { useCheckInBooking, useUpdateBookingStatus } from "@/hooks/queries/useBookings";
 import { useToast } from "@/components/ui/Toast";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
-import { ArrowLeft, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, Send, Luggage } from "lucide-react";
 import api from "@/lib/api";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import Modal from "@/components/ui/Modal";
 import type { Booking } from "@/types";
 
 export default function BookingDetailPage() {
@@ -38,6 +40,31 @@ export default function BookingDetailPage() {
   const checkInMutation = useCheckInBooking();
   const statusMutation = useUpdateBookingStatus();
   const qc = useQueryClient();
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [showLuggage, setShowLuggage] = useState(false);
+  const [transferName, setTransferName] = useState("");
+  const [transferPhone, setTransferPhone] = useState("");
+  const [transferReason, setTransferReason] = useState("");
+  const [luggageQty, setLuggageQty] = useState(1);
+  const [luggageMethod, setLuggageMethod] = useState("cash");
+
+  const transferMutation = useMutation({
+    mutationFn: async (data: Record<string, string>) => {
+      const res = await api.post(`/api/admin/bookings/${booking?.id}/transfer`, data);
+      return res.data;
+    },
+    onSuccess: () => { toast("success", "Booking transferred"); setShowTransfer(false); qc.invalidateQueries({ queryKey: ["admin-booking-ref", ref] }); },
+    onError: () => toast("error", "Transfer failed"),
+  });
+
+  const luggageMutation = useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const res = await api.post(`/api/admin/bookings/${booking?.id}/add-luggage`, data);
+      return res.data;
+    },
+    onSuccess: () => { toast("success", "Luggage added"); setShowLuggage(false); qc.invalidateQueries({ queryKey: ["admin-booking-ref", ref] }); },
+    onError: () => toast("error", "Failed to add luggage"),
+  });
 
   if (isLoading || !booking) return <LoadingSpinner text="Loading booking..." />;
 
@@ -51,12 +78,20 @@ export default function BookingDetailPage() {
               <ArrowLeft className="h-4 w-4 mr-2" /> Back
             </Button>
             {booking.status === "confirmed" && (
-              <Button onClick={() => checkInMutation.mutate(booking.id, {
-                onSuccess: () => toast("success", "Checked in!"),
-                onError: () => toast("error", "Check-in failed"),
-              })} loading={checkInMutation.isPending}>
-                <CheckCircle className="h-4 w-4 mr-2" /> Check In
-              </Button>
+              <>
+                <Button variant="secondary" onClick={() => setShowTransfer(true)}>
+                  <Send className="h-4 w-4 mr-2" /> Transfer
+                </Button>
+                <Button variant="secondary" onClick={() => setShowLuggage(true)}>
+                  <Luggage className="h-4 w-4 mr-2" /> Add Luggage
+                </Button>
+                <Button onClick={() => checkInMutation.mutate(booking.id, {
+                  onSuccess: () => toast("success", "Checked in!"),
+                  onError: () => toast("error", "Check-in failed"),
+                })} loading={checkInMutation.isPending}>
+                  <CheckCircle className="h-4 w-4 mr-2" /> Check In
+                </Button>
+              </>
             )}
           </div>
         }
@@ -154,6 +189,45 @@ export default function BookingDetailPage() {
           )}
         </div>
       </div>
+
+      <Modal isOpen={showTransfer} onClose={() => setShowTransfer(false)} title="Transfer Booking">
+        <div className="space-y-4">
+          <input value={transferName} onChange={e => setTransferName(e.target.value)} placeholder="Recipient full name" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+          <input value={transferPhone} onChange={e => setTransferPhone(e.target.value)} placeholder="Recipient phone (+234...)" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+          <textarea value={transferReason} onChange={e => setTransferReason(e.target.value)} placeholder="Reason for transfer (required)" rows={2} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setShowTransfer(false)}>Cancel</Button>
+            <Button onClick={() => transferMutation.mutate({ recipient_name: transferName, recipient_phone: transferPhone, reason: transferReason })} loading={transferMutation.isPending}>Transfer</Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={showLuggage} onClose={() => setShowLuggage(false)} title="Add Extra Luggage">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Number of bags</label>
+            <select value={luggageQty} onChange={e => setLuggageQty(Number(e.target.value))} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+              {[1,2,3,4,5].map(n => <option key={n} value={n}>{n} bag{n > 1 ? "s" : ""}</option>)}
+            </select>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-3">
+            <p className="text-sm text-gray-600">Price per bag: {formatCurrency(2000)}</p>
+            <p className="text-lg font-bold">{formatCurrency(2000 * luggageQty)}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Payment method</label>
+            <select value={luggageMethod} onChange={e => setLuggageMethod(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+              <option value="cash">Cash</option>
+              <option value="pos">POS</option>
+              <option value="wallet">Wallet</option>
+            </select>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setShowLuggage(false)}>Cancel</Button>
+            <Button onClick={() => luggageMutation.mutate({ quantity: luggageQty, payment_method: luggageMethod })} loading={luggageMutation.isPending}>Add Luggage</Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }
