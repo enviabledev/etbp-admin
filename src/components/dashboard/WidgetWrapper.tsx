@@ -26,7 +26,7 @@ export default function WidgetWrapper({ widget, editMode, onRemove }: WidgetWrap
     <div className="bg-white rounded-xl border border-gray-200 p-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          {editMode && <GripVertical className="h-4 w-4 text-gray-400 cursor-grab" />}
+          {editMode && <GripVertical className="widget-drag-handle h-4 w-4 text-gray-400 cursor-grab" />}
           <h3 className="text-sm font-semibold text-gray-700">{widget.title}</h3>
         </div>
         {editMode && onRemove && (
