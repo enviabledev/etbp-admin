@@ -23,6 +23,17 @@ export function useCreateRouteStop() {
   });
 }
 
+export function useUpdateRouteStop() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ stopId, ...body }: { stopId: string } & Record<string, unknown>) => {
+      const { data } = await api.put(`/api/admin/route-stops/${stopId}`, body);
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-route-stops"] }),
+  });
+}
+
 export function useDeleteRouteStop() {
   const qc = useQueryClient();
   return useMutation({
