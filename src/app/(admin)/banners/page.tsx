@@ -11,9 +11,11 @@ import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 export default function BannersPage() {
   const [showCreate, setShowCreate] = useState(false);
+  const [deletingBannerId, setDeletingBannerId] = useState<string | null>(null);
   const [form, setForm] = useState({ title: "", heading: "", body_text: "", placement: "home_hero", background_color: "#0057FF", text_color: "#FFFFFF", cta_text: "", cta_action: "url", cta_value: "", start_date: "", end_date: "", priority: "0" });
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -62,13 +64,23 @@ export default function BannersPage() {
                   <td className="px-5 py-4 text-sm">{b.impressions?.toLocaleString()}</td>
                   <td className="px-5 py-4 text-sm">{b.clicks?.toLocaleString()}</td>
                   <td className="px-5 py-4 text-sm">{b.ctr}%</td>
-                  <td className="px-5 py-4"><button onClick={() => { if (confirm("Delete?")) deleteMutation.mutate(b.id as string); }} className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button></td>
+                  <td className="px-5 py-4"><button onClick={() => setDeletingBannerId(b.id as string)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!deletingBannerId}
+        onClose={() => setDeletingBannerId(null)}
+        onConfirm={() => { if (deletingBannerId) deleteMutation.mutate(deletingBannerId); setDeletingBannerId(null); }}
+        title="Delete Banner"
+        message="Delete this banner? This cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+      />
 
       <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Create Banner" size="lg">
         <div className="space-y-4">

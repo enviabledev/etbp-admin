@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/Toast";
 import { formatDateTime, cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 const CHANNEL_LABELS: Record<string, string> = { push: "Push", sms: "SMS", both: "Push + SMS" };
 const STATUS_STYLES: Record<string, string> = {
@@ -19,6 +20,8 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default function NotificationsPage() {
   const [page] = useState(1);
+  const [sendingCampaignId, setSendingCampaignId] = useState<string | null>(null);
+  const [deletingCampaignId, setDeletingCampaignId] = useState<string | null>(null);
   const { data, isLoading } = useCampaigns({ page });
   const deleteMutation = useDeleteCampaign();
   const sendMutation = useSendCampaign();
@@ -94,25 +97,14 @@ export default function NotificationsPage() {
                           <button
                             className="p-1.5 rounded hover:bg-blue-50"
                             title="Send"
-                            onClick={() => {
-                              if (confirm("Send this campaign now?")) {
-                                sendMutation.mutate(c.id, {
-                                  onSuccess: () => toast.toast("success","Campaign sent"),
-                                  onError: () => toast.toast("error","Send failed"),
-                                });
-                              }
-                            }}
+                            onClick={() => setSendingCampaignId(c.id)}
                           >
                             <Send className="h-4 w-4 text-blue-600" />
                           </button>
                           <button
                             className="p-1.5 rounded hover:bg-red-50"
                             title="Delete"
-                            onClick={() => {
-                              if (confirm("Delete this draft?")) {
-                                deleteMutation.mutate(c.id, { onSuccess: () => toast.toast("success","Deleted") });
-                              }
-                            }}
+                            onClick={() => setDeletingCampaignId(c.id)}
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </button>
@@ -126,6 +118,41 @@ export default function NotificationsPage() {
           </table>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!sendingCampaignId}
+        onClose={() => setSendingCampaignId(null)}
+        onConfirm={() => {
+          if (sendingCampaignId) {
+            sendMutation.mutate(sendingCampaignId, {
+              onSuccess: () => toast.toast("success", "Campaign sent"),
+              onError: () => toast.toast("error", "Send failed"),
+            });
+          }
+          setSendingCampaignId(null);
+        }}
+        title="Send Campaign"
+        message="Send this campaign now?"
+        confirmLabel="Send"
+        variant="primary"
+      />
+
+      <ConfirmDialog
+        isOpen={!!deletingCampaignId}
+        onClose={() => setDeletingCampaignId(null)}
+        onConfirm={() => {
+          if (deletingCampaignId) {
+            deleteMutation.mutate(deletingCampaignId, {
+              onSuccess: () => toast.toast("success", "Deleted"),
+            });
+          }
+          setDeletingCampaignId(null);
+        }}
+        title="Delete Draft"
+        message="Delete this draft? This cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </div>
   );
 }

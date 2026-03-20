@@ -6,6 +6,7 @@ import { Settings, Plus, Save, RotateCcw, X as XIcon } from "lucide-react";
 import { useDashboardWidgets, useSaveLayout, useDeleteWidget, useResetDashboard } from "@/hooks/queries/useDashboardWidgets";
 import { useToast } from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import WidgetWrapper from "@/components/dashboard/WidgetWrapper";
 import AddWidgetModal from "@/components/dashboard/AddWidgetModal";
 import "react-grid-layout/css/styles.css";
@@ -25,6 +26,7 @@ export default function DashboardPage() {
   const [editMode, setEditMode] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [pendingLayout, setPendingLayout] = useState<LayoutItem[] | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const { toast } = useToast();
 
   const { data: widgets = [], isLoading } = useDashboardWidgets();
@@ -64,11 +66,7 @@ export default function DashboardPage() {
   };
 
   const handleReset = () => {
-    if (confirm("Reset dashboard to defaults? All custom widgets will be removed.")) {
-      resetDashboard.mutate(widgets.map(w => w.id), {
-        onSuccess: () => { setEditMode(false); toast("success", "Dashboard reset"); },
-      });
-    }
+    setShowResetConfirm(true);
   };
 
   if (isLoading) {
@@ -129,6 +127,22 @@ export default function DashboardPage() {
       )}
 
       <AddWidgetModal isOpen={showAdd} onClose={() => setShowAdd(false)} />
+
+      <ConfirmDialog
+        isOpen={showResetConfirm}
+        onClose={() => setShowResetConfirm(false)}
+        onConfirm={() => {
+          setShowResetConfirm(false);
+          resetDashboard.mutate(widgets.map(w => w.id), {
+            onSuccess: () => { setEditMode(false); toast("success", "Dashboard reset"); },
+          });
+        }}
+        title="Reset Dashboard"
+        message="Reset dashboard to defaults? All custom widgets will be removed."
+        confirmLabel="Reset"
+        variant="danger"
+        loading={resetDashboard.isPending}
+      />
     </div>
   );
 }

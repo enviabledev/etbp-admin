@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, UserPlus, FileText, Trash2 } from "lucide-react";
 import { useCorporateAccount, useAddCorporateEmployee, useRemoveCorporateEmployee, useCorporateInvoices, useGenerateInvoice, useRecordInvoicePayment } from "@/hooks/queries/useCorporate";
 import { useToast } from "@/components/ui/Toast";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { formatCurrency, formatDate, cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import Card, { CardBody, CardHeader } from "@/components/ui/Card";
@@ -22,6 +23,7 @@ export default function CorporateDetailPage() {
   const [showAddEmployee, setShowAddEmployee] = useState(false);
   const [showGenInvoice, setShowGenInvoice] = useState(false);
   const [showPayment, setShowPayment] = useState<string | null>(null);
+  const [removingEmployeeId, setRemovingEmployeeId] = useState<string | null>(null);
   const [empForm, setEmpForm] = useState({ email: "", first_name: "", last_name: "", phone: "", department: "", employee_id: "" });
   const [invForm, setInvForm] = useState({ period_start: "", period_end: "" });
   const [payForm, setPayForm] = useState({ amount: "", payment_reference: "", notes: "" });
@@ -90,7 +92,7 @@ export default function CorporateDetailPage() {
                   <td className="px-5 py-3 text-sm">{e.department || "—"}</td>
                   <td className="px-5 py-3 text-sm">{e.is_admin ? "Yes" : "No"}</td>
                   <td className="px-5 py-3">
-                    <button onClick={() => { if (confirm("Remove employee?")) removeEmpMutation.mutate({ accountId: id, employeeId: e.id as string }, { onSuccess: () => toast("success", "Removed") }); }}
+                    <button onClick={() => setRemovingEmployeeId(e.id as string)}
                       className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
                   </td>
                 </tr>
@@ -185,6 +187,21 @@ export default function CorporateDetailPage() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!removingEmployeeId}
+        onClose={() => setRemovingEmployeeId(null)}
+        onConfirm={() => {
+          if (removingEmployeeId) {
+            removeEmpMutation.mutate({ accountId: id, employeeId: removingEmployeeId }, { onSuccess: () => toast("success", "Removed") });
+          }
+          setRemovingEmployeeId(null);
+        }}
+        title="Remove Employee"
+        message="Remove this employee from the corporate account?"
+        confirmLabel="Remove"
+        variant="danger"
+      />
     </div>
   );
 }

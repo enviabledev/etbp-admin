@@ -6,6 +6,7 @@ import { ArrowLeft, Send, Save, Users, Eye } from "lucide-react";
 import { useCreateCampaign, usePreviewCampaign, useSendCampaign } from "@/hooks/queries/useNotifications";
 import { useToast } from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import Link from "next/link";
 
 const TARGET_OPTIONS = [
@@ -35,6 +36,7 @@ export default function NewNotificationPage() {
   const [preview, setPreview] = useState<{ count: number; sample: { id: string; name: string; email?: string; phone?: string }[] } | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [showSendConfirm, setShowSendConfirm] = useState(false);
 
   const needsValue = ["route", "terminal", "city"].includes(targetType);
 
@@ -55,9 +57,14 @@ export default function NewNotificationPage() {
     }
   };
 
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!createdId) { toast.toast("error","Preview first"); return; }
-    if (!confirm(`Send ${channel === "both" ? "Push + SMS" : channel.toUpperCase()} to ${preview?.count || "?"} recipients?`)) return;
+    setShowSendConfirm(true);
+  };
+
+  const performSend = async () => {
+    setShowSendConfirm(false);
+    if (!createdId) return;
     setSending(true);
     try {
       await sendMutation.mutateAsync(createdId);
@@ -178,6 +185,17 @@ export default function NewNotificationPage() {
           <Send className="h-4 w-4 mr-2" /> Send Now
         </Button>
       </div>
+
+      <ConfirmDialog
+        isOpen={showSendConfirm}
+        onClose={() => setShowSendConfirm(false)}
+        onConfirm={performSend}
+        title="Send Campaign"
+        message={`Send ${channel === "both" ? "Push + SMS" : channel.toUpperCase()} to ${preview?.count || "?"} recipients?`}
+        confirmLabel="Send Now"
+        variant="primary"
+        loading={sending}
+      />
     </div>
   );
 }
