@@ -73,6 +73,12 @@ export default function TripDetailPage() {
   const { data: vehiclesData } = useVehicles({ status: "active", page_size: 100 });
   const { data: driversData } = useDrivers({ is_available: true, page_size: 100 });
 
+  const { data: inspection } = useQuery({
+    queryKey: ["trip-inspection", id],
+    queryFn: async () => { const { data } = await api.get(`/api/admin/schedules/trips/${id}/inspection`); return data; },
+    enabled: !!id,
+  });
+
   if (isLoading || !trip) return <LoadingSpinner text="Loading trip..." />;
 
   const isAssigned = !!(trip.vehicle || trip.driver);
@@ -261,6 +267,39 @@ export default function TripDetailPage() {
       </div>
 
       {/* Assign Modal */}
+      {/* Inspection */}
+      <Card className="mt-6">
+        <CardHeader><h3 className="font-semibold">Pre-Trip Inspection</h3></CardHeader>
+        <CardBody>
+          {!inspection || !inspection.completed ? (
+            <p className="text-sm text-gray-500 text-center py-4">
+              {trip.status === "scheduled" ? "Inspection not yet completed" : "⚠ Trip proceeded without inspection"}
+            </p>
+          ) : (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", inspection.overall === "passed" ? "bg-green-100 text-green-700" : inspection.overall === "passed_with_issues" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700")}>
+                    {inspection.passed_count}/{(inspection.passed_count || 0) + (inspection.failed_count || 0)} passed
+                  </span>
+                  {inspection.completed_by?.name && <span className="text-xs text-gray-500">by {inspection.completed_by.name}</span>}
+                </div>
+                {inspection.completed_at && <span className="text-xs text-gray-400">{inspection.completed_at}</span>}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {(inspection.items || []).map((item: Record<string, string | null>, i: number) => (
+                  <div key={i} className="flex items-center gap-2 text-sm">
+                    <span className={item.status === "pass" ? "text-green-600" : "text-red-600"}>{item.status === "pass" ? "✓" : "✗"}</span>
+                    <span className={item.status === "fail" ? "font-medium text-red-700" : "text-gray-700"}>{item.name}</span>
+                    {item.notes && <span className="text-xs text-gray-400">— {item.notes}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
       <Modal isOpen={showAssign} onClose={() => setShowAssign(false)} title="Assign Vehicle & Driver" size="sm">
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
