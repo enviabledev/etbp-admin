@@ -37,6 +37,15 @@ export default function BookingDetailPage() {
     enabled: !!ref,
   });
 
+  const { data: addons } = useQuery({
+    queryKey: ["booking-addons", booking?.id],
+    queryFn: async () => {
+      const { data } = await api.get(`/api/v1/bookings/${booking!.reference}/addons`);
+      return data;
+    },
+    enabled: !!booking?.reference,
+  });
+
   const checkInMutation = useCheckInBooking();
   const statusMutation = useUpdateBookingStatus();
   const qc = useQueryClient();
@@ -184,6 +193,20 @@ export default function BookingDetailPage() {
               <CardHeader><h3 className="font-semibold text-red-600">Cancellation</h3></CardHeader>
               <CardBody>
                 <p className="text-sm text-gray-600">{booking.cancellation_reason}</p>
+              </CardBody>
+            </Card>
+          )}
+
+          {addons && addons.length > 0 && (
+            <Card>
+              <CardHeader><h3 className="font-semibold">Add-ons</h3></CardHeader>
+              <CardBody>
+                {addons.map((a: Record<string, string | number>, i: number) => (
+                  <div key={i} className="flex justify-between text-sm py-1">
+                    <span><Luggage className="h-4 w-4 inline mr-1" />{a.quantity} Extra Bag{(a.quantity as number) > 1 ? "s" : ""}</span>
+                    <span className="font-medium">{formatCurrency(a.total_price as number)} <span className={`text-xs ${a.status === "paid" ? "text-green-600" : "text-orange-600"}`}>{a.status === "paid" ? "Paid" : "Pending"}</span></span>
+                  </div>
+                ))}
               </CardBody>
             </Card>
           )}
